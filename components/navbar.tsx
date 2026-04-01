@@ -51,7 +51,6 @@ const navigationLinks = [
 const publicRoutes = ["/auth", "/pending", "/403", "/account-not-found"];
 
 export function Navbar() {
-  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
@@ -67,7 +66,6 @@ export function Navbar() {
   const isStudent = dbUser?.role === "user" && dbUser?.status === "confirmed";
 
   useEffect(() => {
-    setMounted(true);
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -78,22 +76,6 @@ export function Navbar() {
   );
 
   if (isPublicRoute) return null;
-
-  if (!mounted) {
-    return (
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2 font-bold text-xl">
-              <div className="size-8 rounded-lg bg-primary/20 animate-pulse" />
-              <span>App</span>
-            </div>
-            <div className="size-9 rounded-md bg-muted animate-pulse" />
-          </div>
-        </div>
-      </header>
-    );
-  }
 
   return (
     <header

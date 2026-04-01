@@ -1,11 +1,65 @@
 import { query } from "../_generated/server";
+import type { QueryCtx } from "../_generated/server";
 import { v } from "convex/values";
+
+async function requireIdentity(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthenticated");
+  }
+  return identity;
+}
+
+async function getUserByIdentity(ctx: QueryCtx, clerkId: string) {
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerk", (q) => q.eq("clerk_user_id", clerkId))
+    .first();
+}
+
+async function requireAdmin(ctx: QueryCtx) {
+  const identity = await requireIdentity(ctx);
+  const caller = await getUserByIdentity(ctx, identity.subject);
+  if (!caller || caller.role !== "admin") {
+    throw new Error("Forbidden: Admin access required");
+  }
+  return { identity, caller };
+}
+
+function normalizeDepartment(value: string) {
+  const normalized = value.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    "computer science": "computer science",
+    cs: "computer science",
+    "information technology": "information technology",
+    it: "information technology",
+    electronics: "electronics",
+    ece: "electronics",
+    mechanical: "mechanical",
+    me: "mechanical",
+    civil: "civil",
+    electrical: "electrical",
+    eee: "electrical",
+  };
+  return aliases[normalized] ?? normalized;
+}
 
 // ─── USER QUERIES ───────────────────────────────────────
 
 export const getUserByClerkId = query({
   args: { clerk_user_id: v.string() },
   handler: async (ctx, args) => {
+    const identity = await requireIdentity(ctx);
+    const caller = await getUserByIdentity(ctx, identity.subject);
+
+    if (!caller) {
+      throw new Error("Forbidden");
+    }
+
+    if (caller.role !== "admin" && identity.subject !== args.clerk_user_id) {
+      throw new Error("Forbidden");
+    }
+
     return await ctx.db
       .query("users")
       .withIndex("by_clerk", (q) => q.eq("clerk_user_id", args.clerk_user_id))
@@ -20,6 +74,7 @@ export const listUsers = query({
     status_filter: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const page = args.page ?? 0;
     const pageSize = args.page_size ?? 100;
 
@@ -51,6 +106,7 @@ export const listUsers = query({
 export const getAdminStats = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const allUsers = await ctx.db.query("users").collect();
     const pendingUsers = allUsers.filter((u) => u.status === "pending").length;
     const confirmedUsers = allUsers.filter((u) => u.status === "confirmed").length;
@@ -85,6 +141,7 @@ export const getAdminStats = query({
 export const getConfirmedStudents = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const students = await ctx.db
       .query("users")
       .withIndex("by_status", (q) => q.eq("status", "confirmed"))
@@ -98,6 +155,7 @@ export const getConfirmedStudents = query({
 export const getActiveTemplate = query({
   args: {},
   handler: async (ctx) => {
+    await requireIdentity(ctx);
     return await ctx.db
       .query("marksheet_templates")
       .withIndex("by_active", (q) => q.eq("is_active", true))
@@ -113,6 +171,7 @@ export const getMarksByStudentSemester = query({
     semester: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db
       .query("marks")
       .withIndex("by_student_semester", (q) =>
@@ -142,6 +201,14 @@ export const getMyMarks = query({
 export const getStudentProfile = query({
   args: { clerk_user_id: v.string() },
   handler: async (ctx, args) => {
+    const identity = await requireIdentity(ctx);
+    const caller = await getUserByIdentity(ctx, identity.subject);
+    if (!caller) throw new Error("Forbidden");
+
+    if (caller.role !== "admin" && identity.subject !== args.clerk_user_id) {
+      throw new Error("Forbidden");
+    }
+
     return await ctx.db
       .query("student_profiles")
       .withIndex("by_clerk", (q) => q.eq("clerk_user_id", args.clerk_user_id))
@@ -168,6 +235,7 @@ export const listStudentProfiles = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     let profiles;
     if (args.department_filter && args.department_filter !== "all") {
       profiles = await ctx.db
@@ -223,6 +291,7 @@ export const getActiveNotices = query({
 export const getAllNotices = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const notices = await ctx.db.query("notices").collect();
     return notices.sort((a, b) => b.published_at - a.published_at);
   },
@@ -249,9 +318,10 @@ export const getMyNotices = query({
       .filter((n) => {
         if (n.target_audience === "all") return true;
         if (!profile) return false;
-        const target = n.target_audience.toLowerCase();
+        const target = normalizeDepartment(n.target_audience);
+        const profileDepartment = normalizeDepartment(profile.department);
         return (
-          target === profile.department.toLowerCase() ||
+          target === profileDepartment ||
           target === `semester ${profile.current_semester}`
         );
       })

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { User, Phone, MapPin, GraduationCap, Heart, Pencil } from "lucide-react";
+import { User, Phone, MapPin, GraduationCap, Pencil } from "lucide-react";
 
 const departments = [
   "Computer Science",
@@ -36,6 +36,11 @@ const departments = [
 ];
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+type Gender = "Male" | "Female" | "Other";
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong";
+}
 
 export default function StudentProfilePage() {
   const { user } = useUser();
@@ -129,8 +134,8 @@ export default function StudentProfilePage() {
           blood_group: form.blood_group || undefined,
         });
         toast.success("Profile created successfully!");
-      } catch (err: any) {
-        toast.error(err.message || "Failed to create profile");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err));
       } finally {
         setSaving(false);
       }
@@ -170,7 +175,7 @@ export default function StudentProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label>Gender *</Label>
-                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as any })}>
+                <Select value={form.gender} onValueChange={(v: Gender) => setForm({ ...form, gender: v })}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Male">Male</SelectItem>
@@ -338,8 +343,8 @@ export default function StudentProfilePage() {
       });
       toast.success("Profile updated!");
       setIsEditing(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

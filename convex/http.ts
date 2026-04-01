@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { Webhook } from "svix";
 
@@ -60,7 +60,7 @@ http.route({
 
       try {
         const result = await ctx.runMutation(
-          api.functions.mutations.createUser,
+          internal.functions.mutations.createUser,
           {
             clerk_user_id: clerkUserId,
             email,
@@ -95,7 +95,7 @@ http.route({
 
       try {
         // Update user details (email, name) without changing role/status
-        await ctx.runMutation(api.functions.mutations.createUser, {
+        await ctx.runMutation(internal.functions.mutations.createUser, {
           clerk_user_id: clerkUserId,
           email: user.email_addresses?.[0]?.email_address ?? "",
           name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || "User",
@@ -126,7 +126,7 @@ http.route({
       }
 
       try {
-        await ctx.runMutation(api.functions.mutations.deleteUserByClerkId, {
+        await ctx.runMutation(internal.functions.mutations.deleteUserByClerkId, {
           clerk_user_id: clerkUserId,
         });
 

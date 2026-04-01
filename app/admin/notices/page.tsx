@@ -84,7 +84,7 @@ export default function NoticesPage() {
       setDeletingId(id);
       await deleteNotice({ notice_id: id });
       toast.success("Notice deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete notice");
     } finally {
       setDeletingId(null);
@@ -162,12 +162,12 @@ export default function NoticesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Students</SelectItem>
-                      <SelectItem value="CS">CS</SelectItem>
-                      <SelectItem value="IT">IT</SelectItem>
-                      <SelectItem value="ECE">ECE</SelectItem>
-                      <SelectItem value="ME">ME</SelectItem>
+                      <SelectItem value="Computer Science">Computer Science</SelectItem>
+                      <SelectItem value="Information Technology">Information Technology</SelectItem>
+                      <SelectItem value="Electronics">Electronics</SelectItem>
+                      <SelectItem value="Mechanical">Mechanical</SelectItem>
                       <SelectItem value="Civil">Civil</SelectItem>
-                      <SelectItem value="EEE">EEE</SelectItem>
+                      <SelectItem value="Electrical">Electrical</SelectItem>
                       <SelectItem value="Semester 1">Semester 1</SelectItem>
                       <SelectItem value="Semester 2">Semester 2</SelectItem>
                       <SelectItem value="Semester 3">Semester 3</SelectItem>

@@ -16,6 +16,15 @@ const cornerIcons = [
   { Icon: Lock, label: "HTTPS", color: "text-blue-400", position: "bottom-20 left-20 lg:bottom-28 lg:left-28" },
 ];
 
+const particles = [
+  { top: "22%", left: "18%", duration: 3.2 },
+  { top: "34%", left: "77%", duration: 4.1 },
+  { top: "48%", left: "26%", duration: 3.6 },
+  { top: "56%", left: "68%", duration: 4.4 },
+  { top: "70%", left: "38%", duration: 3.8 },
+  { top: "76%", left: "58%", duration: 4.0 },
+];
+
 export function SecurityShieldAnimation() {
   return (
     <div className="relative flex items-center justify-center w-full h-105 lg:h-130">
@@ -109,18 +118,18 @@ export function SecurityShieldAnimation() {
       </motion.div>
 
       {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
+      {particles.map((particle, i) => (
         <motion.div
           key={`particle-${i}`}
           className={`absolute w-1.5 h-1.5 rounded-full bg-primary/20 dark:bg-primary/40 ${i % 2 === 0 ? "animate-float" : "animate-float-reverse"}`}
           style={{
-            top: `${15 + Math.random() * 70}%`,
-            left: `${10 + Math.random() * 80}%`,
+            top: particle.top,
+            left: particle.left,
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.2, 0.6, 0.2] }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: particle.duration,
             repeat: Infinity,
             delay: i * 0.4,
           }}

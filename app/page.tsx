@@ -374,7 +374,7 @@ export default function Homepage() {
             viewport={{ once: true, amount: 0.1 }}
             variants={staggerContainer}
           >
-            {securityFeatures.map((feature, i) => {
+            {securityFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
                 <motion.div key={feature.title} variants={scaleIn}>

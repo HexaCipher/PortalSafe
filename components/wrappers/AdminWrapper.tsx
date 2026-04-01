@@ -41,7 +41,7 @@ export function AdminWrapper({ children }: { children: React.ReactNode }) {
     dbUser.status !== "confirmed" ||
     dbUser.role !== "admin"
   ) {
-    return <div>Hello World</div>; // Redirecting
+    return null;
   }
 
   return <>{children}</>;

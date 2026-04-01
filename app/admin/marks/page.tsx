@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ function getGradeBadge(grade: string) {
 }
 
 export default function MarksEntryPage() {
+  const router = useRouter();
   const template = useQuery(api.functions.queries.getActiveTemplate);
   const students = useQuery(api.functions.queries.getConfirmedStudents);
   const saveMarks = useMutation(api.functions.adminMutations.saveMarks);
@@ -156,7 +158,7 @@ export default function MarksEntryPage() {
         <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
           <CardContent className="py-12 text-center">
             <p className="text-zinc-600 dark:text-zinc-400">No marksheet template found. Please create a template first.</p>
-            <Button className="mt-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900" onClick={() => (window.location.href = "/admin/template")}>
+            <Button className="mt-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900" onClick={() => router.push("/admin/template")}>
               Create Template
             </Button>
           </CardContent>

@@ -1,5 +1,5 @@
 import { UserObject } from "../types";
-import { mutation } from "../_generated/server";
+import { internalMutation, mutation } from "../_generated/server";
 import { v } from "convex/values";
 
 type CreateUserReturnProps = {
@@ -7,7 +7,7 @@ type CreateUserReturnProps = {
   id: string | null;
 };
 
-export const createUser = mutation({
+export const createUser = internalMutation({
   args: UserObject,
   handler: async (ctx, args): Promise<CreateUserReturnProps> => {
     try {
@@ -33,7 +33,7 @@ export const createUser = mutation({
   },
 });
 
-export const deleteUserByClerkId = mutation({
+export const deleteUserByClerkId = internalMutation({
   args: { clerk_user_id: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -96,7 +96,7 @@ export const createStudentProfile = mutation({
       phone_number: args.phone_number,
       date_of_birth: args.date_of_birth,
       gender: args.gender,
-      department: args.department,
+      department: args.department.trim(),
       batch: args.batch,
       current_semester: args.current_semester,
       father_name: args.father_name,
@@ -135,7 +135,16 @@ export const updateMyProfile = mutation({
       .first();
     if (!profile) throw new Error("Profile not found");
 
-    const updateData: any = { updated_at: Date.now() };
+    const updateData: {
+      updated_at: number;
+      phone_number?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      emergency_contact?: string;
+      blood_group?: string;
+    } = { updated_at: Date.now() };
     if (args.phone_number !== undefined) updateData.phone_number = args.phone_number;
     if (args.address !== undefined) updateData.address = args.address;
     if (args.city !== undefined) updateData.city = args.city;

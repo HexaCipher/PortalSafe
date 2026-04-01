@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -32,7 +32,14 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Search, Eye } from "lucide-react";
 
-const DEPARTMENTS = ["CS", "IT", "ECE", "ME", "Civil", "EEE"];
+const DEPARTMENTS = [
+  "Computer Science",
+  "Information Technology",
+  "Electronics",
+  "Mechanical",
+  "Civil",
+  "Electrical",
+];
 
 export default function StudentsPage() {
   const [search, setSearch] = useState("");

@@ -12,7 +12,7 @@ export default function AccountNotFoundPage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Account Not Found</h1>
           <p className="text-muted-foreground">
-            We couldn't find your account in our system. This might be a temporary issue.
+            We couldn&apos;t find your account in our system. This might be a temporary issue.
           </p>
         </div>
         <div className="space-y-2">

@@ -1,27 +1,28 @@
 import { mutation } from "../_generated/server";
+import type { MutationCtx } from "../_generated/server";
 import { v } from "convex/values";
 import { createClerkClient } from "@clerk/backend";
 
 // ─── HELPERS ────────────────────────────────────────────
 
-async function requireAdmin(ctx: any) {
+async function requireAdmin(ctx: MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
   const callerClerkId = identity.subject;
   const caller = await ctx.db
     .query("users")
-    .withIndex("by_clerk", (q: any) => q.eq("clerk_user_id", callerClerkId))
+    .withIndex("by_clerk", (q) => q.eq("clerk_user_id", callerClerkId))
     .first();
   if (!caller || caller.role !== "admin") throw new Error("Forbidden: Admin access required");
   return { caller, callerClerkId };
 }
 
 async function logAdminAction(
-  ctx: any,
+  ctx: MutationCtx,
   callerClerkId: string,
   actionType: string,
   targetClerkUserId: string,
-  details?: any
+  details?: unknown
 ) {
   await ctx.db.insert("admin_actions", {
     by_clerk_user_id: callerClerkId,
@@ -295,10 +296,20 @@ export const updateStudentProfile = mutation({
       .first();
     if (!profile) throw new Error("Profile not found");
 
-    const updateData: any = { updated_at: Date.now() };
+    const updateData: {
+      updated_at: number;
+      phone_number?: string;
+      current_semester?: number;
+      department?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      emergency_contact?: string;
+    } = { updated_at: Date.now() };
     if (args.phone_number !== undefined) updateData.phone_number = args.phone_number;
     if (args.current_semester !== undefined) updateData.current_semester = args.current_semester;
-    if (args.department !== undefined) updateData.department = args.department;
+    if (args.department !== undefined) updateData.department = args.department.trim();
     if (args.address !== undefined) updateData.address = args.address;
     if (args.city !== undefined) updateData.city = args.city;
     if (args.state !== undefined) updateData.state = args.state;

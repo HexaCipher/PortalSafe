@@ -50,7 +50,6 @@ export default function StudentMarksPage() {
   const [semester, setSemester] = useState(1);
   const profile = useQuery(api.functions.queries.getMyProfile);
   const marks = useQuery(api.functions.queries.getMyMarks, { semester });
-  const template = useQuery(api.functions.queries.getActiveTemplate);
 
   if (profile === undefined) {
     return (
@@ -62,8 +61,8 @@ export default function StudentMarksPage() {
 
   if (profile === null) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="border-zinc-200 dark:border-zinc-800 max-w-md">
+      <div className="flex items-center justify-center min-h-[60vh] px-4">
+        <Card className="w-full max-w-md border-zinc-200 dark:border-zinc-800">
           <CardHeader className="text-center">
             <CardTitle className="text-zinc-900 dark:text-zinc-50">Profile Required</CardTitle>
             <CardDescription>Create your student profile first to view marks.</CardDescription>

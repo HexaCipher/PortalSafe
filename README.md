@@ -121,7 +121,7 @@ The system demonstrates real, practical implementations of core security concept
    NEXT_PUBLIC_CONVEX_URL=<your-convex-url>
    
    # Svix Webhooks (for Clerk events)
-   SVIX_WEBHOOK_SECRET=<your-svix-webhook-secret>
+   CLERK_WEBHOOK_SECRET=<your-clerk-webhook-secret>
    ```
 
    For detailed setup instructions, see [AUTH_SETUP.md](AUTH_SETUP.md)

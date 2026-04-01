@@ -26,7 +26,7 @@ export default function AdminOverviewPage() {
           Dashboard Overview
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-          A high-level view of your application's user base and recent administrative actions.
+          A high-level view of your application&apos;s user base and recent administrative actions.
         </p>
       </div>
 
