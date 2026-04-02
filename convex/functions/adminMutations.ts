@@ -1,7 +1,8 @@
-import { mutation } from "../_generated/server";
+import { mutation, action, internalMutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
 import { v } from "convex/values";
 import { createClerkClient } from "@clerk/backend";
+import { internal } from "../_generated/api";
 
 // ─── HELPERS ────────────────────────────────────────────
 
@@ -64,16 +65,41 @@ export const confirmUser = mutation({
   },
 });
 
-export const deleteUser = mutation({
-  args: { target_clerk_user_id: v.string() },
+// Internal mutation: deletes user from DB and logs the action (no external calls)
+export const deleteUserFromDb = internalMutation({
+  args: { target_clerk_user_id: v.string(), caller_clerk_id: v.string() },
   handler: async (ctx, args) => {
-    const { callerClerkId } = await requireAdmin(ctx);
     const targetUser = await ctx.db
       .query("users")
       .withIndex("by_clerk", (q) => q.eq("clerk_user_id", args.target_clerk_user_id))
       .first();
-    if (!targetUser) throw new Error("User not found");
+    if (targetUser) {
+      await ctx.db.delete(targetUser._id);
+    }
+    await logAdminAction(ctx, args.caller_clerk_id, "delete_user", args.target_clerk_user_id);
+    return { success: true };
+  },
+});
 
+// Public action: can make external HTTP calls to Clerk, then delegates DB work to the internal mutation
+export const deleteUser = action({
+  args: { target_clerk_user_id: v.string() },
+  handler: async (ctx, args) => {
+    // Auth check — actions have ctx.auth but not ctx.db
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const callerClerkId = identity.subject;
+
+    // Verify caller is admin via a quick runQuery (read-only DB access from action)
+    const callerUser = await ctx.runQuery(
+      internal.functions.queries.internalGetUserByClerkId,
+      { clerk_user_id: callerClerkId }
+    );
+    if (!callerUser || callerUser.role !== "admin") {
+      throw new Error("Forbidden: Admin access required");
+    }
+
+    // External call to Clerk (only possible in an action)
     const clerkApiKey = process.env.CLERK_SECRET_KEY;
     if (!clerkApiKey) throw new Error("CLERK_SECRET_KEY not configured");
 
@@ -85,8 +111,12 @@ export const deleteUser = mutation({
       throw new Error("Failed to delete user from Clerk");
     }
 
-    await ctx.db.delete(targetUser._id);
-    await logAdminAction(ctx, callerClerkId, "delete_user", args.target_clerk_user_id);
+    // DB operations via internal mutation
+    await ctx.runMutation(
+      internal.functions.adminMutations.deleteUserFromDb,
+      { target_clerk_user_id: args.target_clerk_user_id, caller_clerk_id: callerClerkId }
+    );
+
     return { success: true };
   },
 });

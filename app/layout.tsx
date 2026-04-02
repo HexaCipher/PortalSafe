@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, DM_Serif_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/lib/ConvexClerkProvider";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -8,14 +8,25 @@ import { SessionWrapper } from "@/components/wrappers/SessionWrapper";
 import { ThemeProvider } from "next-themes";
 import { Navbar } from "@/components/navbar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-dm-serif",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,14 +43,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${dmSans.variable} ${dmSerifDisplay.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <ClerkProvider>
           <ConvexClientProvider>
             <SessionWrapper>
               <ThemeProvider
                 attribute="class"
-                defaultTheme="dark"
+                defaultTheme="light"
                 enableSystem
                 disableTransitionOnChange
               >
@@ -47,7 +58,15 @@ export default function RootLayout({
                 {children}
               </ThemeProvider>
             </SessionWrapper>
-            <Toaster />
+            <Toaster
+              toastOptions={{
+                style: {
+                  fontFamily: "var(--font-dm-sans)",
+                  borderRadius: "2px",
+                  fontSize: "0.875rem",
+                },
+              }}
+            />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

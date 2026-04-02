@@ -3,12 +3,9 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -25,21 +22,14 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Plus, Trash2, Bell } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
-function getPriorityBadge(priority: string) {
-  switch (priority) {
-    case "high":
-      return <Badge className="bg-red-600 text-white hover:bg-red-700">High</Badge>;
-    case "medium":
-      return <Badge className="bg-yellow-500 text-zinc-900 hover:bg-yellow-600">Medium</Badge>;
-    case "low":
-      return <Badge className="bg-green-600 text-white hover:bg-green-700">Low</Badge>;
-    default:
-      return <Badge variant="outline">{priority}</Badge>;
-  }
-}
+const priorityLabel: Record<string, { label: string; color: string }> = {
+  high:   { label: "High",   color: "var(--color-destructive)" },
+  medium: { label: "Medium", color: "oklch(0.70 0.14 80)"      },
+  low:    { label: "Low",    color: "oklch(0.55 0.14 200)"     },
+};
 
 export default function NoticesPage() {
   const notices = useQuery(api.functions.queries.getAllNotices);
@@ -55,25 +45,19 @@ export default function NoticesPage() {
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [targetAudience, setTargetAudience] = useState("all");
 
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setPriority("medium");
-    setTargetAudience("all");
-  };
+  const resetForm = () => { setTitle(""); setDescription(""); setPriority("medium"); setTargetAudience("all"); };
 
   const handleCreate = async () => {
     if (title.length < 3) return toast.error("Title must be at least 3 characters");
     if (description.length < 10) return toast.error("Description must be at least 10 characters");
-
     try {
       setSaving(true);
       await createNotice({ title, description, priority, target_audience: targetAudience });
-      toast.success("Notice published successfully");
+      toast.success("Notice published");
       resetForm();
       setOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create notice");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to publish notice");
     } finally {
       setSaving(false);
     }
@@ -83,9 +67,9 @@ export default function NoticesPage() {
     try {
       setDeletingId(id);
       await deleteNotice({ notice_id: id });
-      toast.success("Notice deleted");
+      toast.success("Notice removed");
     } catch {
-      toast.error("Failed to delete notice");
+      toast.error("Failed to remove notice");
     } finally {
       setDeletingId(null);
     }
@@ -95,72 +79,59 @@ export default function NoticesPage() {
     return <div className="flex justify-center items-center h-64"><Spinner /></div>;
   }
 
+  const active = notices.filter((n) => n.is_active);
+  const archived = notices.filter((n) => !n.is_active);
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-up space-y-8">
+      {/* Page header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Notices
-          </h2>
-          <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-            Publish and manage notices visible to students.
-          </p>
+          <p className="label-caps mb-1">Admin</p>
+          <h1 className="font-display text-2xl text-foreground">Notices</h1>
+          <p className="text-sm text-muted-foreground mt-1">Publish and manage announcements visible to students.</p>
         </div>
 
+        {/* Create dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Notice
-            </Button>
+            <button
+              className="inline-flex items-center gap-2 h-9 px-5 text-sm font-semibold text-primary-foreground bg-primary transition-opacity hover:opacity-90"
+              style={{ borderRadius: "2px" }}
+            >
+              <Plus className="size-4" /> New Notice
+            </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+          <DialogContent className="sm:max-w-lg rounded-sm" style={{ border: "var(--rule-strong)" }}>
             <DialogHeader>
-              <DialogTitle className="text-zinc-900 dark:text-zinc-50">
-                New Notice
-              </DialogTitle>
+              <DialogTitle className="font-display text-lg">New Notice</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-700 dark:text-zinc-300">Title</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Notice title"
-                  className="border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
-                />
+            <div className="space-y-5 pt-2">
+              <div>
+                <p className="label-caps mb-2">Title</p>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Notice title" className="rounded-sm h-9 text-sm" />
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-700 dark:text-zinc-300">Description</Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Write the notice description..."
-                  rows={4}
-                  className="border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
-                />
+              <div>
+                <p className="label-caps mb-2">Description</p>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Write the notice description..." rows={4} className="rounded-sm text-sm resize-none" />
               </div>
-              <div className="grid gap-4 grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-zinc-700 dark:text-zinc-300">Priority</Label>
-                  <Select value={priority} onValueChange={(val) => setPriority(val as "low" | "medium" | "high")}>
-                    <SelectTrigger className="border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="label-caps mb-2">Priority</p>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as "low" | "medium" | "high")}>
+                    <SelectTrigger className="rounded-sm h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-sm">
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-zinc-700 dark:text-zinc-300">Target Audience</Label>
+                <div>
+                  <p className="label-caps mb-2">Audience</p>
                   <Select value={targetAudience} onValueChange={setTargetAudience}>
-                    <SelectTrigger className="border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="rounded-sm h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-sm">
                       <SelectItem value="all">All Students</SelectItem>
                       <SelectItem value="Computer Science">Computer Science</SelectItem>
                       <SelectItem value="Information Technology">Information Technology</SelectItem>
@@ -168,92 +139,87 @@ export default function NoticesPage() {
                       <SelectItem value="Mechanical">Mechanical</SelectItem>
                       <SelectItem value="Civil">Civil</SelectItem>
                       <SelectItem value="Electrical">Electrical</SelectItem>
-                      <SelectItem value="Semester 1">Semester 1</SelectItem>
-                      <SelectItem value="Semester 2">Semester 2</SelectItem>
-                      <SelectItem value="Semester 3">Semester 3</SelectItem>
-                      <SelectItem value="Semester 4">Semester 4</SelectItem>
-                      <SelectItem value="Semester 5">Semester 5</SelectItem>
-                      <SelectItem value="Semester 6">Semester 6</SelectItem>
-                      <SelectItem value="Semester 7">Semester 7</SelectItem>
-                      <SelectItem value="Semester 8">Semester 8</SelectItem>
+                      {[1,2,3,4,5,6,7,8].map((s) => <SelectItem key={s} value={`Semester ${s}`}>Semester {s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-end pt-2">
-                <Button
+              <div className="flex justify-end pt-1">
+                <button
                   onClick={handleCreate}
                   disabled={saving}
-                  className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
+                  className="inline-flex items-center gap-2 h-9 px-6 text-sm font-semibold text-primary-foreground bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ borderRadius: "2px" }}
                 >
-                  {saving && <Spinner className="mr-2 h-4 w-4" />}
-                  Publish Notice
-                </Button>
+                  {saving && <Spinner className="size-4" />}
+                  Publish
+                </button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Notice list */}
       {notices.length === 0 ? (
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardContent className="py-12 text-center">
-            <Bell className="h-12 w-12 mx-auto text-zinc-300 dark:text-zinc-700 mb-4" />
-            <p className="text-zinc-600 dark:text-zinc-400">No notices yet. Create one to get started.</p>
-          </CardContent>
-        </Card>
+        <div style={{ borderTop: "var(--rule)" }}>
+          <p className="text-sm text-muted-foreground py-10">No notices published yet.</p>
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {notices.map((notice) => (
-            <Card
-              key={notice._id}
-              className={`border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 ${
-                !notice.is_active ? "opacity-50" : ""
-              }`}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CardTitle className="text-base text-zinc-900 dark:text-zinc-50">
-                        {notice.title}
-                      </CardTitle>
-                      {getPriorityBadge(notice.priority)}
-                      {!notice.is_active && (
-                        <Badge variant="outline" className="border-red-300 text-red-600">
-                          Deleted
-                        </Badge>
-                      )}
+        <div>
+          <p className="label-caps mb-3">Active ({active.length})</p>
+          <div style={{ borderTop: "var(--rule-strong)" }}>
+            {active.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6">No active notices.</p>
+            ) : (
+              active.map((notice) => {
+                const p = priorityLabel[notice.priority];
+                return (
+                  <div
+                    key={notice._id}
+                    className={`flex items-start gap-4 py-4 pl-4 pr-3 transition-colors hover:bg-muted/30 priority-${notice.priority}`}
+                    style={{ borderBottom: "var(--rule)" }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <p className="text-sm font-semibold text-foreground">{notice.title}</p>
+                        <span className="text-xs font-medium" style={{ color: p.color }}>{p.label}</span>
+                        <span className="text-xs text-muted-foreground">→ {notice.target_audience}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{notice.description}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1.5">
+                        {new Date(notice.published_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-zinc-500">
-                      <span>{new Date(notice.published_at).toLocaleDateString()}</span>
-                      <span>Target: {notice.target_audience}</span>
-                    </div>
-                  </div>
-                  {notice.is_active && (
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    <button
                       onClick={() => handleDelete(notice._id)}
                       disabled={deletingId === notice._id}
-                      className="border-zinc-300 dark:border-zinc-700 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 shrink-0"
+                      className="shrink-0 flex size-7 items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                      title="Remove notice"
                     >
-                      {deletingId === notice._id ? (
-                        <Spinner className="h-4 w-4" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                  {notice.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                      {deletingId === notice._id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {archived.length > 0 && (
+            <div className="mt-8">
+              <p className="label-caps mb-3">Archived ({archived.length})</p>
+              <div style={{ borderTop: "var(--rule)" }}>
+                {archived.map((notice) => (
+                  <div key={notice._id} className="py-4 px-1 opacity-40" style={{ borderBottom: "var(--rule)" }}>
+                    <p className="text-sm font-medium text-foreground line-through">{notice.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Removed · {new Date(notice.published_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

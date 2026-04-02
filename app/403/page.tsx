@@ -1,31 +1,30 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function ForbiddenPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="max-w-md w-full p-6 space-y-4">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">403 - Access Forbidden</h1>
-          <p className="text-muted-foreground">
-            You don&apos;t have permission to access this page.
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="w-full max-w-sm animate-fade-up" style={{ borderTop: "var(--rule-strong)" }}>
+        <div className="pt-6 pb-4" style={{ borderBottom: "var(--rule)" }}>
+          <p className="label-caps mb-3">Error 403</p>
+          <h1 className="font-display text-2xl text-foreground">Access Forbidden</h1>
+        </div>
+
+        <div className="py-5" style={{ borderBottom: "var(--rule)" }}>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            You do not have permission to access this page. This area is restricted
+            to authorized users with the required role.
           </p>
         </div>
-        <div className="space-y-2">
-          <p className="text-sm">
-            This area is restricted to administrators only. If you believe you
-            should have access, please contact your administrator.
-          </p>
-        </div>
-        <div className="pt-4">
-          <Link href="/">
-            <Button variant="default" className="w-full">
-              Go to Home
-            </Button>
+
+        <div className="pt-5">
+          <Link
+            href="/"
+            className="text-sm font-medium text-primary underline underline-offset-4 hover:opacity-70 transition-opacity"
+          >
+            Return to home →
           </Link>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

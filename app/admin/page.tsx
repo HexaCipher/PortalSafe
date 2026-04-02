@@ -2,160 +2,151 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserCheck, Clock, ShieldCheck, ArrowRight, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Spinner } from "@/components/ui/spinner";
+import { ArrowUpRight } from "lucide-react";
 
 export default function AdminOverviewPage() {
   const stats = useQuery(api.functions.queries.getAdminStats);
 
   if (!stats) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner />
+      <div className="animate-fade-in">
+        <div className="h-8 w-32 bg-muted rounded-sm animate-pulse mb-10" />
+        <div className="grid grid-cols-4 gap-0" style={{ borderTop: "var(--rule-strong)", borderBottom: "var(--rule-strong)" }}>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="py-6 px-6" style={{ borderRight: i < 3 ? "var(--rule)" : "none" }}>
+              <div className="h-3 w-16 bg-muted rounded-sm animate-pulse mb-3" />
+              <div className="h-7 w-10 bg-muted rounded-sm animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
+  const statItems = [
+    { label: "Total Users",    value: stats.totalUsers },
+    { label: "Pending",        value: stats.pendingUsers },
+    { label: "Confirmed",      value: stats.confirmedUsers },
+    { label: "Admins",         value: stats.adminUsers },
+  ];
+
+  const quickLinks = [
+    { href: "/admin/users",    label: "Manage Users",        desc: "Approve, disable, or delete user accounts" },
+    { href: "/admin/marks",    label: "Marks Entry",         desc: "Enter or update student examination marks" },
+    { href: "/admin/notices",  label: "Post Notice",         desc: "Publish announcements to students" },
+    { href: "/admin/students", label: "Student Profiles",    desc: "View and edit registered student details" },
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="animate-fade-up space-y-12">
+
+      {/* Page heading */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Dashboard Overview
-        </h2>
-        <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-          A high-level view of your application&apos;s user base and recent administrative actions.
-        </p>
+        <p className="label-caps mb-1">Overview</p>
+        <h1 className="font-display text-2xl text-foreground">Dashboard</h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Total Users
-            </CardTitle>
-            <Users className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              {stats.totalUsers}
+      {/* ── Stats strip ───────────────────────────────────── */}
+      <div>
+        <p className="label-caps mb-3">User Statistics</p>
+        <div
+          className="grid grid-cols-2 lg:grid-cols-4"
+          style={{ borderTop: "var(--rule-strong)", borderBottom: "var(--rule-strong)" }}
+        >
+          {statItems.map((stat, i) => (
+            <div
+              key={stat.label}
+              className="py-6 px-0 lg:px-6 first:pl-0"
+              style={{
+                borderRight: i < statItems.length - 1 ? "var(--rule)" : "none",
+                borderBottom: i < 2 ? "var(--rule)" : "none",
+              }}
+            >
+              <p className="label-caps mb-2">{stat.label}</p>
+              <p className="font-display text-3xl text-foreground">{stat.value}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Pending Approval
-            </CardTitle>
-            <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              {stats.pendingUsers}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Confirmed Users
-            </CardTitle>
-            <UserCheck className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              {stats.confirmedUsers}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Admins
-            </CardTitle>
-            <ShieldCheck className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              {stats.adminUsers}
-            </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
-            <CardTitle className="text-zinc-900 dark:text-zinc-50">
-              Recent Administrative Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              {stats.recentActions.length === 0 ? (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  No recent actions recorded.
-                </p>
-              ) : (
-                stats.recentActions.map((action) => (
-                  <div
-                    key={action._id}
-                    className="flex items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-2 last:border-0 last:pb-0"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none text-zinc-900 dark:text-zinc-50">
-                        {action.action_type.replace("_", " ").toUpperCase()}
-                      </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Target: {action.target_clerk_user_id}
-                      </p>
-                    </div>
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {new Date(action.created_at).toLocaleString()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Two-col below: recent actions + quick links ────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-12">
 
-        <Card className="col-span-3 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
-            <CardTitle className="text-zinc-900 dark:text-zinc-50">Quick Access</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Manage user accounts and approve pending users.
-              </p>
-              <Link href="/admin/users">
-                <Button className="w-full justify-between bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900">
-                  Manage Users
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+        {/* Recent admin actions */}
+        <div>
+          <p className="label-caps mb-4">Recent Actions</p>
+          <div style={{ borderTop: "var(--rule-strong)" }}>
+            {/* Table header */}
+            <div
+              className="grid grid-cols-[1fr_1fr_8rem] gap-4 py-2 bg-muted/40"
+              style={{ borderBottom: "var(--rule-strong)" }}
+            >
+              {["Action", "Target", "Time"].map((h) => (
+                <span key={h} className="label-caps px-1">{h}</span>
+              ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Update student marks for MST and EST.
-              </p>
-              <Link href="/admin/marks">
-                <Button
-                  variant="outline"
-                  className="w-full justify-between border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
+            {stats.recentActions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6">No recent actions recorded.</p>
+            ) : (
+              stats.recentActions.map((action) => (
+                <div
+                  key={action._id}
+                  className="grid grid-cols-[1fr_1fr_8rem] gap-4 py-3.5 px-1"
+                  style={{ borderBottom: "var(--rule)" }}
                 >
-                  Marks Management
-                  <BookOpen className="ml-2 h-4 w-4" />
-                </Button>
+                  <span className="text-sm font-medium text-foreground font-mono">
+                    {action.action_type}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate self-center">
+                    {action.target_clerk_user_id.slice(0, 20)}…
+                  </span>
+                  <span className="text-xs text-muted-foreground self-center">
+                    {new Date(action.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Quick links */}
+        <div>
+          <p className="label-caps mb-4">Quick Access</p>
+          <div style={{ borderTop: "var(--rule-strong)" }}>
+            {quickLinks.map((link, i) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="group flex items-start justify-between py-4 gap-4 transition-colors hover:bg-muted/30"
+                style={{ borderBottom: "var(--rule)", paddingLeft: "0.25rem", paddingRight: "0.25rem" }}
+              >
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-0.5">{link.label}</p>
+                  <p className="text-xs text-muted-foreground">{link.desc}</p>
+                </div>
+                <ArrowUpRight className="size-4 text-muted-foreground shrink-0 mt-0.5 group-hover:text-foreground transition-colors" />
               </Link>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </div>
+
       </div>
+
+      {/* Additional stats */}
+      <div className="flex items-center gap-8 pt-2" style={{ borderTop: "var(--rule)" }}>
+        <div>
+          <p className="label-caps mb-1">Active Notices</p>
+          <p className="text-xl font-display text-foreground">{stats.activeNotices}</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <p className="label-caps mb-1">Student Profiles</p>
+          <p className="text-xl font-display text-foreground">{stats.totalProfiles}</p>
+        </div>
+      </div>
+
     </div>
   );
 }

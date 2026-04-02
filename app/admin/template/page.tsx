@@ -3,14 +3,9 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Save, FileText } from "lucide-react";
 
 const DEFAULT_SUBJECTS = [
   "Subject 1",
@@ -22,6 +17,13 @@ const DEFAULT_SUBJECTS = [
   "Subject 7",
 ];
 
+const examStructure = [
+  { label: "MST-I",              value: "25", note: "Mid-semester test 1" },
+  { label: "MST-II",             value: "25", note: "Mid-semester test 2" },
+  { label: "EST",                value: "50", note: "End-semester test"   },
+  { label: "Total per Subject",  value: "100", note: "MST-I + MST-II + EST" },
+];
+
 export default function TemplatePage() {
   const template = useQuery(api.functions.queries.getActiveTemplate);
   const saveTemplate = useMutation(api.functions.adminMutations.saveTemplate);
@@ -29,155 +31,102 @@ export default function TemplatePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (template) {
-      setSubjects(template.subjects);
-    }
+    if (template) setSubjects(template.subjects);
   }, [template]);
 
-  const handleSubjectChange = (index: number, value: string) => {
+  const handleChange = (i: number, val: string) => {
     const updated = [...subjects];
-    updated[index] = value;
+    updated[i] = val;
     setSubjects(updated);
   };
 
   const handleSave = async () => {
     const empty = subjects.findIndex((s) => !s.trim());
-    if (empty !== -1) {
-      toast.error(`Subject ${empty + 1} name cannot be empty`);
-      return;
-    }
+    if (empty !== -1) return toast.error(`Subject ${empty + 1} cannot be empty`);
     try {
       setSaving(true);
       await saveTemplate({ subjects: subjects.map((s) => s.trim()) });
-      toast.success("Template saved successfully");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save template");
+      toast.success("Template saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save template");
     } finally {
       setSaving(false);
     }
   };
 
   if (template === undefined) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-64"><Spinner /></div>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="animate-fade-up space-y-10">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Marksheet Template
-        </h2>
-        <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-          Configure the universal marksheet template with 7 subjects. This applies to all students.
+        <p className="label-caps mb-1">Admin</p>
+        <h1 className="font-display text-2xl text-foreground">Marksheet Template</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Configure the universal marksheet. Exactly 7 subjects apply to all students.
+          {template && (
+            <> Last updated: {new Date(template.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.</>
+          )}
         </p>
       </div>
 
-      {/* Exam Structure Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              MST-I
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">25</div>
-            <p className="text-xs text-zinc-500 mt-1">Max marks</p>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              MST-II
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">25</div>
-            <p className="text-xs text-zinc-500 mt-1">Max marks</p>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              EST
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">50</div>
-            <p className="text-xs text-zinc-500 mt-1">Max marks</p>
-          </CardContent>
-        </Card>
-        <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Total per Subject
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">100</div>
-            <p className="text-xs text-zinc-500 mt-1">MST-I + MST-II + EST</p>
-          </CardContent>
-        </Card>
+      {/* Exam structure — horizontal ruled strip */}
+      <div>
+        <p className="label-caps mb-3">Exam Structure</p>
+        <div
+          className="grid grid-cols-2 md:grid-cols-4"
+          style={{ borderTop: "var(--rule-strong)", borderBottom: "var(--rule-strong)" }}
+        >
+          {examStructure.map((item, i) => (
+            <div
+              key={item.label}
+              className="py-5 px-0 md:px-6 first:pl-0"
+              style={{ borderRight: i < examStructure.length - 1 ? "var(--rule)" : "none" }}
+            >
+              <p className="label-caps mb-1">{item.label}</p>
+              <p className="font-display text-2xl text-foreground">{item.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Template Editor */}
-      <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-        <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-              <div>
-                <CardTitle className="text-lg text-zinc-900 dark:text-zinc-50">
-                  Subject Names
-                </CardTitle>
-                <p className="text-sm text-zinc-500 mt-1">
-                  Define the 7 subjects for the marksheet
-                </p>
-              </div>
-            </div>
-            {template && (
-              <Badge
-                variant="outline"
-                className="border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
-              >
-                Last updated: {new Date(template.updated_at).toLocaleDateString()}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            {subjects.map((subject, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <Label className="w-24 text-zinc-700 dark:text-zinc-300 shrink-0">
-                  Subject {i + 1}
-                </Label>
-                <Input
-                  value={subject}
-                  onChange={(e) => handleSubjectChange(i, e.target.value)}
-                  placeholder={`Enter subject ${i + 1} name`}
-                  className="border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900"
+      {/* Subject list */}
+      <div className="max-w-lg">
+        <p className="label-caps mb-4">Subject Names</p>
+        <div style={{ borderTop: "var(--rule-strong)" }}>
+          {subjects.map((subject, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 py-3"
+              style={{ borderBottom: "var(--rule)" }}
             >
-              {saving ? <Spinner className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
-              Save Template
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <span className="font-mono text-xs text-muted-foreground/50 w-6 shrink-0">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <Input
+                value={subject}
+                onChange={(e) => handleChange(i, e.target.value)}
+                placeholder={`Subject ${i + 1}`}
+                className="h-8 rounded-sm text-sm border-0 border-b border-border rounded-none px-0 bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 h-9 px-6 text-sm font-semibold text-primary-foreground bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ borderRadius: "2px" }}
+          >
+            {saving && <Spinner className="size-4" />}
+            Save Template
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,13 +4,8 @@ import { ReactNode } from "react";
 import { StudentWrapper } from "@/components/wrappers/StudentWrapper";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, BookOpen, Bell } from "lucide-react";
 
-export default function StudentLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function StudentLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isActive = (path: string) => {
@@ -20,49 +15,49 @@ export default function StudentLayout({
   };
 
   const navLinks = [
-    { href: "/student", label: "My Profile", icon: User },
-    { href: "/student/marks", label: "My Marks", icon: BookOpen },
-    { href: "/student/notices", label: "Notices", icon: Bell },
+    { href: "/student",         label: "My Profile" },
+    { href: "/student/marks",   label: "My Marks"   },
+    { href: "/student/notices", label: "Notices"    },
   ];
 
   return (
     <StudentWrapper>
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
-        <div className="flex">
-          {/* Sidebar */}
-          <aside className="w-64 min-h-[calc(100vh-64px)] sticky top-16 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-            <div className="p-6">
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                Student Portal
-              </h1>
-            </div>
+      <div className="min-h-[calc(100vh-3.5rem)]">
 
-            <nav className="space-y-2 px-4">
+        {/* ── Portal header + horizontal tab bar ───────────── */}
+        <div className="border-b border-border bg-background">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <div className="pt-6 pb-3">
+              <p className="label-caps">Student Portal</p>
+            </div>
+            <nav className="flex items-end gap-0 overflow-x-auto">
               {navLinks.map((link) => {
-                const Icon = link.icon;
                 const active = isActive(link.href);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      active
-                        ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                    }`}
+                    className="relative shrink-0 px-4 pb-3 pt-1 text-sm font-medium transition-colors"
+                    style={{
+                      color: active
+                        ? "var(--color-foreground)"
+                        : "var(--color-muted-foreground)",
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{link.label}</span>
+                    {link.label}
+                    {active && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground animate-fade-in" />
+                    )}
                   </Link>
                 );
               })}
             </nav>
-          </aside>
+          </div>
+        </div>
 
-          {/* Main Content */}
-          <main className="flex-1">
-            <div className="container mx-auto px-8 py-8">{children}</div>
-          </main>
+        {/* ── Page content ─────────────────────────────────── */}
+        <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
+          {children}
         </div>
       </div>
     </StudentWrapper>

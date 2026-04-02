@@ -5,9 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,18 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { User, Phone, MapPin, GraduationCap, Pencil } from "lucide-react";
 
-const departments = [
+const DEPARTMENTS = [
   "Computer Science",
   "Information Technology",
   "Electronics",
@@ -35,11 +24,22 @@ const departments = [
   "Electrical",
 ];
 
-const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 type Gender = "Male" | "Female" | "Other";
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Something went wrong";
+function FieldRow({ label, value, editing, children }: { label: string; value?: string; editing?: boolean; children?: React.ReactNode }) {
+  return (
+    <div
+      className="flex items-start justify-between gap-6 py-3"
+      style={{ borderBottom: "var(--rule)" }}
+    >
+      <span className="label-caps shrink-0 pt-[3px]">{label}</span>
+      {editing ? children : (
+        <span className="text-sm text-foreground text-right">{value || "—"}</span>
+      )}
+    </div>
+  );
 }
 
 export default function StudentProfilePage() {
@@ -51,13 +51,12 @@ export default function StudentProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form state for creation
   const [form, setForm] = useState({
     roll_number: "",
     full_name: user?.fullName ?? "",
     phone_number: "",
     date_of_birth: "",
-    gender: "" as "Male" | "Female" | "Other" | "",
+    gender: "" as Gender | "",
     department: "",
     batch: "",
     current_semester: 1,
@@ -71,7 +70,6 @@ export default function StudentProfilePage() {
     blood_group: "",
   });
 
-  // Editable fields state
   const [editForm, setEditForm] = useState({
     phone_number: "",
     address: "",
@@ -83,227 +81,172 @@ export default function StudentProfilePage() {
   });
 
   if (profile === undefined) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Spinner />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[60vh]"><Spinner /></div>;
   }
 
-  // ──── CREATE PROFILE FORM ─────────────────────────────
+  /* ── CREATE PROFILE ────────────────────────────────── */
   if (profile === null) {
     const handleCreate = async () => {
-      if (!form.roll_number || !form.full_name || !form.phone_number || !form.date_of_birth || !form.gender || !form.department || !form.batch || !form.father_name || !form.mother_name || !form.address || !form.city || !form.state || !form.pincode || !form.emergency_contact) {
-        toast.error("Please fill in all required fields");
-        return;
+      const r = form;
+      if (!r.roll_number || !r.full_name || !r.phone_number || !r.date_of_birth || !r.gender || !r.department || !r.batch || !r.father_name || !r.mother_name || !r.address || !r.city || !r.state || !r.pincode || !r.emergency_contact) {
+        return toast.error("Please fill in all required fields");
       }
-      if (!/^\d{6,10}$/.test(form.roll_number)) {
-        toast.error("Roll number must be 6-10 digits");
-        return;
-      }
-      if (!/^\d{10}$/.test(form.phone_number)) {
-        toast.error("Phone must be 10 digits");
-        return;
-      }
-      if (!/^\d{6}$/.test(form.pincode)) {
-        toast.error("Pincode must be 6 digits");
-        return;
-      }
-      if (!/^\d{10}$/.test(form.emergency_contact)) {
-        toast.error("Emergency contact must be 10 digits");
-        return;
-      }
+      if (!/^\d{6,10}$/.test(r.roll_number)) return toast.error("Roll number must be 6–10 digits");
+      if (!/^\d{10}$/.test(r.phone_number)) return toast.error("Phone must be 10 digits");
+      if (!/^\d{6}$/.test(r.pincode)) return toast.error("Pincode must be 6 digits");
+      if (!/^\d{10}$/.test(r.emergency_contact)) return toast.error("Emergency contact must be 10 digits");
+
       setSaving(true);
       try {
         await createProfile({
-          roll_number: form.roll_number,
-          full_name: form.full_name,
-          phone_number: form.phone_number,
-          date_of_birth: form.date_of_birth,
-          gender: form.gender as "Male" | "Female" | "Other",
-          department: form.department,
-          batch: form.batch,
-          current_semester: form.current_semester,
-          father_name: form.father_name,
-          mother_name: form.mother_name,
-          address: form.address,
-          city: form.city,
-          state: form.state,
-          pincode: form.pincode,
-          emergency_contact: form.emergency_contact,
-          blood_group: form.blood_group || undefined,
+          roll_number: r.roll_number,
+          full_name: r.full_name,
+          phone_number: r.phone_number,
+          date_of_birth: r.date_of_birth,
+          gender: r.gender as Gender,
+          department: r.department,
+          batch: r.batch,
+          current_semester: r.current_semester,
+          father_name: r.father_name,
+          mother_name: r.mother_name,
+          address: r.address,
+          city: r.city,
+          state: r.state,
+          pincode: r.pincode,
+          emergency_contact: r.emergency_contact,
+          blood_group: r.blood_group || undefined,
         });
-        toast.success("Profile created successfully!");
-      } catch (err: unknown) {
-        toast.error(getErrorMessage(err));
+        toast.success("Profile created successfully");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Something went wrong");
       } finally {
         setSaving(false);
       }
     };
 
+    const f = form;
+    const setF = (updates: Partial<typeof form>) => setForm((prev) => ({ ...prev, ...updates }));
+
+    const inputClass = "h-8 rounded-sm text-sm border-0 border-b border-border px-0 bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors";
+    const selectTriggerClass = "h-8 rounded-sm text-sm border border-border";
+
     return (
-      <div className="space-y-8">
+      <div className="animate-fade-up space-y-10 max-w-2xl">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Create Your Profile
-          </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Fill in your details to get started
-          </p>
+          <p className="label-caps mb-1">Student Portal</p>
+          <h1 className="font-display text-2xl text-foreground">Create Your Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">Fill in your details to complete registration. Fields marked * are required.</p>
         </div>
 
-        <div className="grid gap-6">
-          {/* Personal Information */}
-          <Card className="border-zinc-200 dark:border-zinc-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-                <User className="h-5 w-5" /> Personal Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
-                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Doe" />
+        {/* Personal */}
+        <div>
+          <p className="label-caps mb-3" style={{ borderBottom: "var(--rule-strong)", paddingBottom: "0.5rem" }}>Personal Information</p>
+          <div style={{ borderTop: "none" }}>
+            {[
+              { label: "Full Name *",     field: "full_name",    placeholder: "Your full name" },
+              { label: "Roll Number *",   field: "roll_number",  placeholder: "6–10 digit enrollment number" },
+              { label: "Date of Birth *", field: "date_of_birth", placeholder: "", type: "date" },
+              { label: "Father's Name *", field: "father_name",  placeholder: "" },
+              { label: "Mother's Name *", field: "mother_name",  placeholder: "" },
+            ].map(({ label, field, placeholder, type }) => (
+              <div key={field} className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+                <span className="label-caps w-32 shrink-0">{label}</span>
+                <Input
+                  type={type ?? "text"}
+                  value={(f as Record<string, string | number>)[field] as string}
+                  onChange={(e) => setF({ [field]: e.target.value } as Partial<typeof form>)}
+                  placeholder={placeholder}
+                  className={inputClass}
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Roll Number *</Label>
-                <Input value={form.roll_number} onChange={(e) => setForm({ ...form, roll_number: e.target.value })} placeholder="e.g. 12345678" />
-              </div>
-              <div className="space-y-2">
-                <Label>Date of Birth *</Label>
-                <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Gender *</Label>
-                <Select value={form.gender} onValueChange={(v: Gender) => setForm({ ...form, gender: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Father&apos;s Name *</Label>
-                <Input value={form.father_name} onChange={(e) => setForm({ ...form, father_name: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Mother&apos;s Name *</Label>
-                <Input value={form.mother_name} onChange={(e) => setForm({ ...form, mother_name: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Blood Group</Label>
-                <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select (optional)" /></SelectTrigger>
-                  <SelectContent>
-                    {bloodGroups.map((bg) => (
-                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Academic Information */}
-          <Card className="border-zinc-200 dark:border-zinc-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-                <GraduationCap className="h-5 w-5" /> Academic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Department *</Label>
-                <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Batch *</Label>
-                <Input value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} placeholder="e.g. 2023-2027" />
-              </div>
-              <div className="space-y-2">
-                <Label>Current Semester *</Label>
-                <Select value={String(form.current_semester)} onValueChange={(v) => setForm({ ...form, current_semester: Number(v) })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                      <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contact Information */}
-          <Card className="border-zinc-200 dark:border-zinc-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-                <Phone className="h-5 w-5" /> Contact Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Phone Number *</Label>
-                <Input value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} placeholder="10 digits" />
-              </div>
-              <div className="space-y-2">
-                <Label>Emergency Contact *</Label>
-                <Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} placeholder="10 digits" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Address */}
-          <Card className="border-zinc-200 dark:border-zinc-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-                <MapPin className="h-5 w-5" /> Address
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2 md:col-span-2 lg:col-span-4">
-                <Label>Address *</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address" />
-              </div>
-              <div className="space-y-2">
-                <Label>City *</Label>
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>State *</Label>
-                <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Pincode *</Label>
-                <Input value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} placeholder="6 digits" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={handleCreate}
-              disabled={saving}
-              className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 px-8"
-            >
-              {saving ? "Creating..." : "Create Profile"}
-            </Button>
+            ))}
+            <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+              <span className="label-caps w-32 shrink-0">Gender *</span>
+              <Select value={f.gender} onValueChange={(v) => setF({ gender: v as Gender })}>
+                <SelectTrigger className={selectTriggerClass}><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="rounded-sm">
+                  {["Male","Female","Other"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+              <span className="label-caps w-32 shrink-0">Blood Group</span>
+              <Select value={f.blood_group} onValueChange={(v) => setF({ blood_group: v })}>
+                <SelectTrigger className={selectTriggerClass}><SelectValue placeholder="Optional" /></SelectTrigger>
+                <SelectContent className="rounded-sm">
+                  {BLOOD_GROUPS.map((bg) => <SelectItem key={bg} value={bg}>{bg}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+        </div>
+
+        {/* Academic */}
+        <div>
+          <p className="label-caps mb-3" style={{ borderBottom: "var(--rule-strong)", paddingBottom: "0.5rem" }}>Academic Information</p>
+          <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+            <span className="label-caps w-32 shrink-0">Department *</span>
+            <Select value={f.department} onValueChange={(v) => setF({ department: v })}>
+              <SelectTrigger className={selectTriggerClass}><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent className="rounded-sm">
+                {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+            <span className="label-caps w-32 shrink-0">Batch *</span>
+            <Input value={f.batch} onChange={(e) => setF({ batch: e.target.value })} placeholder="e.g. 2023–2027" className={inputClass} />
+          </div>
+          <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+            <span className="label-caps w-32 shrink-0">Semester *</span>
+            <Select value={String(f.current_semester)} onValueChange={(v) => setF({ current_semester: Number(v) })}>
+              <SelectTrigger className={selectTriggerClass}><SelectValue /></SelectTrigger>
+              <SelectContent className="rounded-sm">
+                {[1,2,3,4,5,6,7,8].map((s) => <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Contact */}
+        <div>
+          <p className="label-caps mb-3" style={{ borderBottom: "var(--rule-strong)", paddingBottom: "0.5rem" }}>Contact & Address</p>
+          {[
+            { label: "Phone *",           field: "phone_number",     placeholder: "10 digits" },
+            { label: "Emergency *",       field: "emergency_contact", placeholder: "10 digits" },
+            { label: "Address *",         field: "address",           placeholder: "Street address" },
+            { label: "City *",            field: "city",              placeholder: "" },
+            { label: "State *",           field: "state",             placeholder: "" },
+            { label: "Pincode *",         field: "pincode",           placeholder: "6 digits" },
+          ].map(({ label, field, placeholder }) => (
+            <div key={field} className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+              <span className="label-caps w-32 shrink-0">{label}</span>
+              <Input
+                value={(f as Record<string, string | number>)[field] as string}
+                onChange={(e) => setF({ [field]: e.target.value } as Partial<typeof form>)}
+                placeholder={placeholder}
+                className={inputClass}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleCreate}
+            disabled={saving}
+            className="inline-flex items-center gap-2 h-9 px-6 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 disabled:opacity-50 transition-opacity"
+            style={{ borderRadius: "2px" }}
+          >
+            {saving && <Spinner className="size-4" />}
+            Create Profile
+          </button>
         </div>
       </div>
     );
   }
 
-  // ──── VIEW / EDIT PROFILE ─────────────────────────────
+  /* ── VIEW / EDIT PROFILE ───────────────────────────── */
   const startEditing = () => {
     setEditForm({
       phone_number: profile.phone_number,
@@ -318,18 +261,9 @@ export default function StudentProfilePage() {
   };
 
   const handleSaveEdit = async () => {
-    if (editForm.phone_number && !/^\d{10}$/.test(editForm.phone_number)) {
-      toast.error("Phone must be 10 digits");
-      return;
-    }
-    if (editForm.pincode && !/^\d{6}$/.test(editForm.pincode)) {
-      toast.error("Pincode must be 6 digits");
-      return;
-    }
-    if (editForm.emergency_contact && !/^\d{10}$/.test(editForm.emergency_contact)) {
-      toast.error("Emergency contact must be 10 digits");
-      return;
-    }
+    if (editForm.phone_number && !/^\d{10}$/.test(editForm.phone_number)) return toast.error("Phone must be 10 digits");
+    if (editForm.pincode && !/^\d{6}$/.test(editForm.pincode)) return toast.error("Pincode must be 6 digits");
+    if (editForm.emergency_contact && !/^\d{10}$/.test(editForm.emergency_contact)) return toast.error("Emergency contact must be 10 digits");
     setSaving(true);
     try {
       await updateProfile({
@@ -341,188 +275,137 @@ export default function StudentProfilePage() {
         emergency_contact: editForm.emergency_contact,
         blood_group: editForm.blood_group || undefined,
       });
-      toast.success("Profile updated!");
+      toast.success("Profile updated");
       setIsEditing(false);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSaving(false);
     }
   };
 
+  const inputEdit = "h-8 rounded-sm text-sm border-0 border-b border-border px-0 bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors";
+
+  const sections = [
+    {
+      label: "Personal",
+      fields: [
+        { label: "Full Name",       value: profile.full_name       },
+        { label: "Roll Number",     value: profile.roll_number     },
+        { label: "Email",           value: profile.email           },
+        { label: "Date of Birth",   value: profile.date_of_birth   },
+        { label: "Gender",          value: profile.gender          },
+        { label: "Father's Name",   value: profile.father_name     },
+        { label: "Mother's Name",   value: profile.mother_name     },
+        { label: "Blood Group",     value: profile.blood_group ?? "—" },
+      ],
+    },
+    {
+      label: "Academic",
+      fields: [
+        { label: "Department",  value: profile.department                   },
+        { label: "Batch",       value: profile.batch                        },
+        { label: "Semester",    value: `Semester ${profile.current_semester}` },
+      ],
+    },
+  ];
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-up space-y-10">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">My Profile</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Your student information
-          </p>
+          <p className="label-caps mb-1">Student</p>
+          <h1 className="font-display text-2xl text-foreground">My Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">{profile.roll_number} · {profile.department}</p>
         </div>
         {!isEditing && (
-          <Button
+          <button
             onClick={startEditing}
-            variant="outline"
-            className="border-zinc-300 dark:border-zinc-700"
+            className="text-xs font-medium text-primary underline underline-offset-4 hover:opacity-70 transition-opacity"
           >
-            <Pencil className="h-4 w-4 mr-2" /> Edit Contact Info
-          </Button>
+            Edit contact info
+          </button>
         )}
       </div>
 
-      <div className="grid gap-6">
-        {/* Personal */}
-        <Card className="border-zinc-200 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <User className="h-5 w-5" /> Personal Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <InfoField label="Full Name" value={profile.full_name} />
-              <InfoField label="Roll Number" value={profile.roll_number} />
-              <InfoField label="Email" value={profile.email} />
-              <InfoField label="Date of Birth" value={profile.date_of_birth} />
-              <InfoField label="Gender" value={profile.gender} />
-              <InfoField label="Father's Name" value={profile.father_name} />
-              <InfoField label="Mother's Name" value={profile.mother_name} />
-              {profile.blood_group && (
-                <InfoField label="Blood Group" value={profile.blood_group} />
-              )}
+      {/* Read-only fields */}
+      {sections.map((section) => (
+        <div key={section.label} className="max-w-xl">
+          <p className="label-caps mb-0" style={{ borderBottom: "var(--rule-strong)", paddingBottom: "0.5rem" }}>
+            {section.label}
+          </p>
+          {section.fields.map(({ label, value }) => (
+            <div key={label} className="flex items-start justify-between gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+              <span className="label-caps shrink-0">{label}</span>
+              <span className="text-sm text-foreground text-right">{value}</span>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      ))}
 
-        {/* Academic */}
-        <Card className="border-zinc-200 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <GraduationCap className="h-5 w-5" /> Academic Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InfoField label="Department" value={profile.department} />
-              <InfoField label="Batch" value={profile.batch} />
-              <div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">Current Semester</p>
-                <Badge variant="outline" className="mt-1 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100">
-                  Semester {profile.current_semester}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Contact — editable */}
-        <Card className="border-zinc-200 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <Phone className="h-5 w-5" /> Contact Information
-            </CardTitle>
-            <CardDescription>
-              {isEditing ? "Edit your contact details below" : "Contact and emergency details"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Contact — editable section */}
+      <div className="max-w-xl">
+        <p className="label-caps mb-0" style={{ borderBottom: "var(--rule-strong)", paddingBottom: "0.5rem" }}>
+          Contact & Address{isEditing && <span className="text-primary"> (editing)</span>}
+        </p>
+        {[
+          { label: "Phone Number",      key: "phone_number"      as keyof typeof editForm },
+          { label: "Emergency Contact", key: "emergency_contact" as keyof typeof editForm },
+          { label: "Address",           key: "address"           as keyof typeof editForm },
+          { label: "City",              key: "city"              as keyof typeof editForm },
+          { label: "State",             key: "state"             as keyof typeof editForm },
+          { label: "Pincode",           key: "pincode"           as keyof typeof editForm },
+        ].map(({ label, key }) => (
+          <div key={key} className="flex items-center justify-between gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+            <span className="label-caps shrink-0">{label}</span>
             {isEditing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Phone Number</Label>
-                    <Input value={editForm.phone_number} onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Emergency Contact</Label>
-                    <Input value={editForm.emergency_contact} onChange={(e) => setEditForm({ ...editForm, emergency_contact: e.target.value })} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Blood Group</Label>
-                  <Select value={editForm.blood_group} onValueChange={(v) => setEditForm({ ...editForm, blood_group: v })}>
-                    <SelectTrigger className="w-48"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {bloodGroups.map((bg) => (
-                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <Input
+                value={editForm[key]}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, [key]: e.target.value }))}
+                className={`${inputEdit} text-right max-w-[16rem]`}
+              />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoField label="Phone Number" value={profile.phone_number} />
-                <InfoField label="Emergency Contact" value={profile.emergency_contact} />
-              </div>
+              <span className="text-sm text-foreground text-right">
+                {(profile as Record<string, string | number | undefined>)[key] ?? "—"}
+              </span>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Address — editable */}
-        <Card className="border-zinc-200 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <MapPin className="h-5 w-5" /> Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isEditing ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2 md:col-span-2 lg:col-span-4">
-                  <Label>Address</Label>
-                  <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>City</Label>
-                  <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>State</Label>
-                  <Input value={editForm.state} onChange={(e) => setEditForm({ ...editForm, state: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Pincode</Label>
-                  <Input value={editForm.pincode} onChange={(e) => setEditForm({ ...editForm, pincode: e.target.value })} />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="md:col-span-2 lg:col-span-4">
-                  <InfoField label="Address" value={profile.address} />
-                </div>
-                <InfoField label="City" value={profile.city} />
-                <InfoField label="State" value={profile.state} />
-                <InfoField label="Pincode" value={profile.pincode} />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        ))}
 
         {isEditing && (
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsEditing(false)} className="border-zinc-300 dark:border-zinc-700">
+          <div className="flex items-center gap-6 py-3" style={{ borderBottom: "var(--rule)" }}>
+            <span className="label-caps shrink-0">Blood Group</span>
+            <Select value={editForm.blood_group} onValueChange={(v) => setEditForm((prev) => ({ ...prev, blood_group: v }))}>
+              <SelectTrigger className="h-8 rounded-sm text-sm max-w-[16rem] border border-border">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="rounded-sm">
+                {BLOOD_GROUPS.map((bg) => <SelectItem key={bg} value={bg}>{bg}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {isEditing && (
+          <div className="flex justify-end gap-3 mt-4">
+            <button
+              onClick={() => setIsEditing(false)}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+            >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleSaveEdit}
               disabled={saving}
-              className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="inline-flex items-center gap-2 h-9 px-5 text-sm font-semibold text-primary-foreground bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ borderRadius: "2px" }}
             >
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
+              {saving && <Spinner className="size-4" />}
+              Save Changes
+            </button>
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function InfoField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="text-zinc-900 dark:text-zinc-50 font-medium mt-0.5">{value}</p>
     </div>
   );
 }

@@ -4,13 +4,8 @@ import { ReactNode } from "react";
 import { AdminWrapper } from "@/components/wrappers/AdminWrapper";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, BookOpen, FileText, Bell, GraduationCap } from "lucide-react";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isActive = (path: string) => {
@@ -20,52 +15,58 @@ export default function AdminLayout({
   };
 
   const navLinks = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/users", label: "Users", icon: Users },
-    { href: "/admin/template", label: "Marksheet Template", icon: FileText },
-    { href: "/admin/marks", label: "Marks Entry", icon: BookOpen },
-    { href: "/admin/notices", label: "Notices", icon: Bell },
-    { href: "/admin/students", label: "Student Profiles", icon: GraduationCap },
+    { href: "/admin",          label: "Dashboard"         },
+    { href: "/admin/users",    label: "Users"             },
+    { href: "/admin/template", label: "Template"          },
+    { href: "/admin/marks",    label: "Marks Entry"       },
+    { href: "/admin/notices",  label: "Notices"           },
+    { href: "/admin/students", label: "Students"          },
   ];
 
   return (
     <AdminWrapper>
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
-        <div className="flex">
-          {/* Sidebar */}
-          <aside className="w-64 min-h-[calc(100vh-64px)] sticky top-16 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-            <div className="p-6">
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                Admin Panel
-              </h1>
+      <div className="min-h-[calc(100vh-3.5rem)]">
+
+        {/* ── Portal header + horizontal tab bar ───────────── */}
+        <div className="border-b border-border bg-background">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            {/* Portal label */}
+            <div className="pt-6 pb-3">
+              <p className="label-caps">Admin Panel</p>
             </div>
 
-            <nav className="space-y-2 px-4">
+            {/* Tab row */}
+            <nav className="flex items-end gap-0 overflow-x-auto">
               {navLinks.map((link) => {
-                const Icon = link.icon;
                 const active = isActive(link.href);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      active
-                        ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                    }`}
+                    className="relative shrink-0 px-4 pb-3 pt-1 text-sm font-medium transition-colors"
+                    style={{
+                      color: active
+                        ? "var(--color-foreground)"
+                        : "var(--color-muted-foreground)",
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{link.label}</span>
+                    {link.label}
+                    {/* Active indicator — 2px rule underline */}
+                    {active && (
+                      <span
+                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground animate-fade-in"
+                      />
+                    )}
                   </Link>
                 );
               })}
             </nav>
-          </aside>
+          </div>
+        </div>
 
-          {/* Main Content */}
-          <main className="flex-1">
-            <div className="container mx-auto px-8 py-8">{children}</div>
-          </main>
+        {/* ── Page content ─────────────────────────────────── */}
+        <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
+          {children}
         </div>
       </div>
     </AdminWrapper>

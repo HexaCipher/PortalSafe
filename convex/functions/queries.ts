@@ -1,4 +1,4 @@
-import { query } from "../_generated/server";
+import { query, internalQuery } from "../_generated/server";
 import type { QueryCtx } from "../_generated/server";
 import { v } from "convex/values";
 
@@ -16,6 +16,14 @@ async function getUserByIdentity(ctx: QueryCtx, clerkId: string) {
     .withIndex("by_clerk", (q) => q.eq("clerk_user_id", clerkId))
     .first();
 }
+
+// Internal query used by actions that need to check user role
+export const internalGetUserByClerkId = internalQuery({
+  args: { clerk_user_id: v.string() },
+  handler: async (ctx, args) => {
+    return await getUserByIdentity(ctx, args.clerk_user_id);
+  },
+});
 
 async function requireAdmin(ctx: QueryCtx) {
   const identity = await requireIdentity(ctx);
