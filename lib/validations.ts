@@ -12,10 +12,40 @@ export const nameSchema = z
     "Name must contain only letters — no numbers or special characters"
   );
 
+// ─── Email Validation ─────────────────────────────────────
+//
+// DESIGN NOTE — why we allow addresses like scufjh@hfg.pt
+// ──────────────────────────────────────────────────────────
+// Email FORMAT validation only checks whether the address is
+// syntactically correct per RFC 5321.  It cannot tell whether
+// a mailbox is real or fake — that is the job of the OTP
+// verification step (Clerk sends a code; the user must type it).
+//
+// scufjh@hfg.pt  → valid format, .pt is Portugal's ccTLD ✓
+// 24100030044.uset@ltsu.ac.in → valid format ✓
+// fake@@domain   → invalid structure ✗
+// user@domain    → no TLD ✗
+// user@.com      → empty label ✗
+//
+// Regex anatomy:
+//   Local part  : 1-64 chars; alphanumeric + .!#$%&'*+/=?^_`{|}~-
+//                 No leading/trailing dot; no consecutive dots
+//   @
+//   Domain      : one or more labels separated by dots
+//                 Each label: 1-63 chars of alphanum/hyphen
+//                 Labels cannot start or end with a hyphen
+//   TLD         : at least 2 alpha characters (covers .in .ac .uk .com .io etc.)
+//
+const EMAIL_REGEX =
+  /^(?=[^@]{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
 export const signUpSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
-  emailAddress: z.string().email("Enter a valid email address"),
+  emailAddress: z
+    .string()
+    .min(1, "Email is required")
+    .regex(EMAIL_REGEX, "Enter a valid email address (e.g. name@domain.com)"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
